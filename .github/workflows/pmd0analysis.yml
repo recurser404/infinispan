@@ -7,50 +7,33 @@ on:
     branches: [main]
 
 jobs:
-  run-pmd:
-    name: Run PMD and comment using reviewdog CLI
+  pmd-analysis:
+    name: Run PMD via GitHub Action
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v4
+      - name: PMD analysis
+        uses: pmd/pmd-github-action@v2
+        id: pmd
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+          # Adjust to point at your own ruleset(s)
+          rulesets: src/main/resources/pmd-ruleset.xml
+          # Only analyze changed files to avoid noise from legacy code
+          analyzeModifiedFilesOnly: true
+          # Annotate PR diffs with violations
+          createGitHubAnnotations: true
+          # Upload SARIF for Code Scanning alerts
+          uploadSarifReport: true
 
-      - name: Build all modules (skip tests)
-        run: mvn -B clean install -DskipTests
-
-      - name: Run PMD
-        run: mvn -B pmd:pmd -Dskip=false -DskipPmd=false
-
-      - name: Upload PMD Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pmd-report
-          path: core/target/pmd.xml
-
-      - name: Install reviewdog
-        run: |
-          curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b ./bin
-          echo "$(pwd)/bin" >> $GITHUB_PATH
-
-      - name: Comment PMD findings with reviewdog
-        if: github.event_name == 'pull_request'
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ./bin/reviewdog -f=pmd -name="PMD" -reporter=github-pr-review \
-            -fail-on-error=false -level=warning < core/target/pmd.xml
+      - name: Fail build on new violations
+        if: steps.pmd.outputs.violations != '0'
+        run: exit 1
