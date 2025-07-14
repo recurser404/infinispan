@@ -26,10 +26,13 @@ jobs:
         id: pmd
         with:
           version: '7.15.0'
-          # ← Use the built-in Quickstart ruleset
-          rulesets: 'category/java/quickstart.xml'
+          # Use PMD’s built-in Quickstart rules—no custom file needed
+          rulesets: 'rulesets/java/quickstart.xml'
+          # Only flag violations in files changed by this commit/PR
           analyzeModifiedFilesOnly: true
+          # Annotate inline on PR diffs
           createGitHubAnnotations: true
+          # Upload SARIF to Code Scanning (Security tab) and as an artifact
           uploadSarifReport: true
 
       - name: Fail build on new violations
