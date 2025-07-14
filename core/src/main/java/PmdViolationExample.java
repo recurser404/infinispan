@@ -16,4 +16,3 @@ public class PmdViolationExample {
         System.out.println("PMD test");
     }
 }
-
