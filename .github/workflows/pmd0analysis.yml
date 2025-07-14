@@ -31,6 +31,7 @@ jobs:
           uploadSarifReport: true
 
       - name: Fail build on new violations
-        if: steps.pmd.outputs.violations != '0'
-        continue-on-error: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[skip-pmd]') || github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[skip-pmd]') }}
-        run: exit 1
+        if: >
+          steps.pmd.outputs.violations != '0' &&
+          !(
+            github.event_name == 'push' && contains(github.event.head_
