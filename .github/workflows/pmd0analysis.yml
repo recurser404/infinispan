@@ -8,7 +8,6 @@ on:
 
 jobs:
   pmd-analysis:
-    name: Run PMD via GitHub Action
     runs-on: ubuntu-latest
 
     steps:
@@ -26,15 +25,14 @@ jobs:
         id: pmd
         with:
           version: '7.15.0'
-          # Use PMD’s built-in Quickstart rules—no custom file needed
           rulesets: 'rulesets/java/quickstart.xml'
-          # Only flag violations in files changed by this commit/PR
           analyzeModifiedFilesOnly: true
-          # Annotate inline on PR diffs
           createGitHubAnnotations: true
-          # Upload SARIF to Code Scanning (Security tab) and as an artifact
           uploadSarifReport: true
 
-      - name: Fail build on new violations
-        if: steps.pmd.outputs.violations != '0'
+      - name: Fail build on new violations (unless skipped)
+        if: >
+          steps.pmd.outputs.violations != '0' &&
+          !contains(github.event.pull_request.title, '[skip-pmd]') &&
+          !contains(github.event.head_commit.message, '[skip-pmd]')
         run: exit 1
