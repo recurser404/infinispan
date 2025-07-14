@@ -15,6 +15,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Show ruleset location (debug)
+        run: |
+          echo "Looking for your ruleset here:"
+          ls -R . | grep -E "pmd-ruleset.xml" || echo "RULESET NOT FOUND!"
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
@@ -25,14 +30,12 @@ jobs:
         uses: pmd/pmd-github-action@v2
         id: pmd
         with:
-          # Adjust to point at your own ruleset(s)
-          rulesets: src/main/resources/pmd-ruleset.xml
-          # Only analyze changed files to avoid noise from legacy code
+          # 👉 Make sure this matches exactly where your file lives
+          rulesets: ./src/main/resources/pmd-ruleset.xml
           analyzeModifiedFilesOnly: true
-          # Annotate PR diffs with violations
           createGitHubAnnotations: true
-          # Upload SARIF for Code Scanning alerts
           uploadSarifReport: true
+          debug: true
 
       - name: Fail build on new violations
         if: steps.pmd.outputs.violations != '0'
